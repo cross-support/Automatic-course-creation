@@ -1,0 +1,13 @@
+# Python 캐시 파일
+__pycache__/
+*.py[cod]
+
+# 환경 변수 (민감 정보 보호)
+.env
+
+# 운영체제 임시 파일
+.DS_Store (Mac용)
+Thumbs.db (Windows용)
+
+#가상 환경
+venv/

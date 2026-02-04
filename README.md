@@ -8,6 +8,9 @@
 - **AIコンテンツ生成**: OpenAI(GPT)を活用したスライド構成資料およびレイアウト生成
 - **スライド生成**: **Google Slides API**を活用して、座標ベースでテキストボックスや図形を精密に配置
 
+## デモ動画 (Demo Video)
+[![Demo Video](https://img.youtube.com/vi/OoEsnP-VbK8/0.jpg)](https://www.youtube.com/watch?v=OoEsnP-VbK8)
+
 ## 技術スタック (Tech Stack)
 ![Python](https://img.shields.io/badge/Python-3.10+-3776AB?logo=python&logoColor=white&labelColor=3776AB)
 ![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=flat&logo=fastapi&logoColor=white)

@@ -6,8 +6,7 @@
 
 **主な機能**
 - **AIコンテンツ生成**: OpenAI(GPT)を活用したスライド構成資料およびレイアウト生成
-- **スライド生成**：:
-    - **Google Slides API**を活用して、座標ベースでテキストボックスや図形を精密に配置
+- **スライド生成**: **Google Slides API**を活用して、座標ベースでテキストボックスや図形を精密に配置
 
 ## 技術スタック (Tech Stack)
 ![Python](https://img.shields.io/badge/Python-3.10+-3776AB?logo=python&logoColor=white&labelColor=3776AB)

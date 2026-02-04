@@ -40,7 +40,7 @@ class SlideWorkflowService:
                 yield json.dumps(update, ensure_ascii=False) + "\n"
 
             if not research_results:
-                yield json.dumps({"status": "error", "message": "Research 단계에서 데이터가 생성되지 않았습니다."}, ensure_ascii=False) + "\n"
+                yield json.dumps({"status": "error", "message": "Research ステップでデータが生成されませんでした。"}, ensure_ascii=False) + "\n"
                 return
 
             yield json.dumps({
@@ -67,7 +67,7 @@ class SlideWorkflowService:
                 final_composition = temp_collected
 
             if not final_composition:
-                yield json.dumps({"status": "error", "message": "슬라이드 설계 데이터가 비어있습니다."}, ensure_ascii=False) + "\n"
+                yield json.dumps({"status": "error", "message": "スライド設計 データが空です"}, ensure_ascii=False) + "\n"
                 return
 
             logger.info(f"Final composition count: {len(final_composition)}")
@@ -92,5 +92,5 @@ class SlideWorkflowService:
             logger.error(f"Pipeline Critical Error: {str(e)}", exc_info=True)
             yield json.dumps({
                 "status": "error", 
-                "message": f"시스템 처리 중 오류가 발생했습니다: {str(e)}"
+                "message": f"システム処理中にエラーが発生しました: {str(e)}"
             }, ensure_ascii=False) + "\n"

@@ -7,7 +7,7 @@ from typing import List, Dict, Any, Generator, Literal, Tuple
 from openai import OpenAI, RateLimitError, APITimeoutError
 from pydantic import BaseModel, Field
 
-GPT_MODEL = "gpt-4o-mini"
+GPT_MODEL = "gpt-4o"
 
 class SlideLayoutItem(BaseModel):
     type: Literal["表紙", "本文", "要約"]

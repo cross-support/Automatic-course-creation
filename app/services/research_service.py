@@ -6,7 +6,7 @@ from typing import List, Dict, Any, Generator
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
-GPT_MODEL = "gpt-4o-mini"
+GPT_MODEL = "gpt-4o"
     
 class SlideResponse(BaseModel):
     conclusion: str = Field(description="核心要約1文")

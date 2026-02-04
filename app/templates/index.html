@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>講義スライドの作成</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+
+    <div class="main-wrapper">
+        
+        <div id="input-section" class="upload-card">
+            <h2 class="text-center mb-4 fw-bold">講義スライドの作成</h2>
+            <form id="research-form">
+                <div class="row">
+                    <div class="col-md-9 mb-3">
+                        <label class="form-label fw-bold">ユニットタイトル</label>
+                        <input type="text" name="unit_title" class="form-control" placeholder="例：ビジネスマナーの基礎" required>
+                    </div>
+                     <div class="col-md-3 mb-3">
+                        <label class="form-label fw-bold">ユニット番号</label>
+                        <input type="number" name="unit_no" class="form-control" value="1" required>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label fw-bold">受講対象</label>
+                    <input type="text" name="audience" class="form-control" value="新入社員" placeholder="例：マーケティングチームの新入社員">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">学習目標（カンマで区切ります）</label>
+                    <input type="text" name="learning_goals" class="form-control" value="効率的な報告方法、優先順位の判断">
+                </div>
+                <div class="mb-4">
+                    <label class="form-label fw-bold">CSV原稿ファイル</label>
+                    <input type="file" name="file" class="form-control" accept=".csv" required>
+                    <div class="form-text">UTF-8 または cp949 エンコードされた CSV ファイルをアップロードしてください。</div>
+                </div>
+                
+                <button type="submit" id="submit-btn" class="btn btn-primary w-100 py-3 fw-bold fs-5">
+                    <span id="btn-text">PPT作成開始</span>
+                    <span id="btn-spinner" class="spinner-border spinner-border-sm hidden" role="status" aria-hidden="true"></span>
+                </button>
+            </form>
+        </div>
+
+        <div id="result-section" class="upload-card hidden">
+            <div class="status-container">
+                <h2 class="fw-bold mb-4">🛠️制作中（画面から退出しないでください）</h2>
+                
+                <div class="progress mb-4 shadow-sm" style="height: 30px;">
+                    <div id="progress-bar" class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" style="width: 0%">0%</div>
+                </div>
+                
+                <h4 id="status-info" class="text-secondary animate-pulse mb-4">サーバーと接続中···</h4>
+                
+                <div id="final-action-area" style="min-height: 100px;"></div>
+
+                <div id="retry-area" class="mt-5 hidden">
+                    <button onclick="location.reload()" class="btn btn-outline-secondary px-4">最初に戻る</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="/static/js/script.js"></script>
+</body>
+</html>

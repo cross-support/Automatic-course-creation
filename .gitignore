@@ -1,13 +1,19 @@
-# Python 캐시 파일
+# Pythonキャッシュファイル
 __pycache__/
 *.py[cod]
 
-# 환경 변수 (민감 정보 보호)
+# 環境変数（機密情報保護）
 .env
 
-# 운영체제 임시 파일
-.DS_Store (Mac용)
-Thumbs.db (Windows용)
+# オペレーティングシステムの一時ファイル
+# MAC
+.DS_Store
+#Windows
+Thumbs.db
 
-#가상 환경
+#仮想環境
 venv/
+
+#Google
+credentials.json
+token.json

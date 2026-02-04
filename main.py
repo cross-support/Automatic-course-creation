@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 import uvicorn
-from app.api.v1.endpoints import router as api_router
+from app.api.v1.endpoints.slides import router as api_router
 from dotenv import load_dotenv
 
 load_dotenv()

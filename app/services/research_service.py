@@ -1,27 +1,34 @@
 import pandas as pd
-from openai import OpenAI
+import time
+from openai import OpenAI, RateLimitError, APITimeoutError
 from pydantic import BaseModel, Field
 from typing import List, Dict, Any, Generator
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
+
+GPT_MODEL = "gpt-4o-mini"
+    
 class SlideResponse(BaseModel):
-    conclusion: str = Field(description="핵심 요약 1문장.")
-    key_messages: List[str] = Field(description="최대 3점. 짧고 간결하게 작성.")
-    case_study: str = Field(description="[상황 → 행동 → 결과] 구조의 구체적인 업무 장면.")
-    pitfalls: List[str] = Field(description="실무자가 흔히 하는 실수 1~2점.")
-    action_item: str = Field(description="강의 직후 즉시 실행할 'Next Step' 1문장.")
-    mini_work: str = Field(description="30초 내로 생각 가능한 질문.")
-    split_plan: str = Field(description="1/2페이지(Why/What), 2/2페이지(How/Specific) 요소 구분.")
-    references: str = Field(description="참고문헌 정보.")
+    conclusion: str = Field(description="核心要約1文")
+    key_messages: List[str] = Field(description="最大3点。短く簡潔に")
+    case_study: str = Field(description="【状況→行動→結果】 構造の具体的な業務シーン")
+    pitfalls: List[str] = Field(description="実務者がよくするミス1~2点")
+    action_item: str = Field(description="講義直後にすぐ実行する「Next Step」の1文")
+    mini_work: str = Field(description="30秒以内に考えられる質問")
+    split_plan: str = Field(description="1/2 ページ(Why/What)、2/2 ページ(How/Specific) 要素区分")
+    references: str = Field(description="[タイトル / 著者·機関 / 年 / 要約]")
 
 class ResearchService:
+    SYSTEM_INSTRUCTION = """あなたは企業向けeラーニング講座の専門原稿設計者です。 
+    下記の「作成原則」を遵守し、挨拶のない本論【No】からスタートのみ出力してください。
+
+    ### [必須作成原則]
+    1. [形式] 必ずMarkdown形式を使用するが、可読性のためにボールド(**)記号は絶対に使用しない。
+    2. 【内容】ビジネスとは無関係な抽象的比喩（宇宙、料理など）の禁止。 実際の業務現場密着型で作成。
+    3. 【根拠】出典不明の通念は"根拠弱"明示。 公共機関/報告書のデータを優先的に活用。"""
+
     def __init__(self, api_key: str):
         self.client = OpenAI(api_key=api_key.strip())
-        self.SYSTEM_INSTRUCTION = """당신은 기업 교육 전문가입니다. 모든 답변은 일본어로 작성하세요.
-
-        ### [필수 작성 원칙]
-        1. [형식] 반드시 Markdown 형식을 사용하되, 가독성을 위해 볼드(**) 기호는 절대 사용하지 마십시오.
-        2. [내용] 비즈니스와 무관한 추상적 비유(우주, 요리 등)는 금지합니다. 실제 업무 현장 밀착형으로 작성하십시오.
-        3. [근거] 출처가 불분명한 통념은 "근거 약함"을 명시하십시오. 공공기관이나 공식 보고서 데이터를 우선적으로 활용하십시오."""
 
     def run_research(
         self,
@@ -29,67 +36,93 @@ class ResearchService:
         unit_number: int,
         unit_title: str,
         audience: str,
-        learning_goals: List[str]
+        learning_goals: List[str],
+        max_workers: int = 5
     ) -> Generator[Dict[str, Any], None, None]:
         
-        filtered_df = self._prepare_dataframe(df, unit_number, unit_title)
+        filtered_df = self._filter_dataframe(df, unit_number, unit_title)
 
         if filtered_df.empty:
-            yield {"status": "error", "message": "일치하는 유닛을 찾을 수 없습니다."}
+            yield {"status": "error", "message": "一致するユニットが見つかりません。"}
             return
 
         source_data = filtered_df.to_dict(orient="records")
-        total = len(source_data)
-        all_parsed_data = []
+        total_count = len(source_data)
+        
+        results = [None] * total_count
 
-        for idx, item in enumerate(source_data):
-            percent = int((idx / total) * 100)
-            yield {
-                "status": "progress",
-                "message": f"[{idx + 1}/{total}] '{item['slide_title']}' 분석 중...",
-                "percent": percent
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            future_to_index = {
+                executor.submit(self._fetch_ai_response, item['slide_title'], audience, learning_goals): idx
+                for idx, item in enumerate(source_data)
             }
 
-            try:
-                res_dict = self._get_ai_response(item['slide_title'], audience, learning_goals)
-                final_item = {**item, **res_dict}
-                all_parsed_data.append(final_item)
-            except Exception as e:
-                yield {"status": "error", "message": f"{idx + 1}번 항목 에러: {str(e)}"}
+            completed_count = 0
+            
+            for future in as_completed(future_to_index):
+                idx = future_to_index[future]
+                completed_count += 1
+                percent = int((completed_count / total_count) * 100)
+                
+                original_item = source_data[idx]
+
+                try:
+                    ai_response = future.result()
+                    results[idx] = {**original_item, **ai_response}
+                    
+                    yield {
+                        "status": "progress",
+                        "message": f"[{completed_count}/{total_count}] {original_item.get('slide_title', 'タイトルなし')}",
+                        "percent": percent
+                    }
+                except Exception as e:
+                    results[idx] = original_item 
+                    yield {
+                        "status": "error", 
+                        "message": f"スライド. '{original_item.get('slide_title')}' 処理失敗: {str(e)}"
+                    }
+                    
+        final_results = [r for r in results if r is not None]
 
         yield {
             "status": "complete",
-            "message": "모든 분석 완료!",
+            "message": "すべての分析が完了！",
             "percent": 100,
-            "data": all_parsed_data
+            "data": final_results
         }
 
-    def _prepare_dataframe(self, df: pd.DataFrame, unit_number: int, unit_title: str) -> pd.DataFrame:
-        def normalize(s: Any) -> str:
-            return str(s).replace(" ", "").replace("　", "").strip()
-
-        temp_df = df.copy()
+    def _filter_dataframe(self, df: pd.DataFrame, unit_number: int, unit_title: str) -> pd.DataFrame:
+        target_title_norm = str(unit_title).replace(" ", "").replace("　", "").strip()
         
-        temp_df['unit_title_norm'] = temp_df['unit_title'].apply(normalize)
-        target_title_norm = normalize(unit_title)
-        
-        temp_df['unit_number_str'] = (
-            pd.to_numeric(temp_df['unit_number'], errors='coerce')
-            .fillna(0).astype(int).astype(str)
-        )
+        numeric_col = pd.to_numeric(df['unit_number'], errors='coerce').fillna(0).astype(int)
+        mask_number = numeric_col == int(unit_number)
 
-        return temp_df[
-            (temp_df['unit_number_str'] == str(unit_number)) &
-            (temp_df['unit_title_norm'] == target_title_norm)
-        ].copy()
+        norm_col = df['unit_title'].astype(str).str.replace(r"\s+", "", regex=True)
+        mask_title = norm_col == target_title_norm
 
-    def _get_ai_response(self, slide_title: str, audience: str, goals: List[str]) -> Dict[str, Any]:
-        completion = self.client.beta.chat.completions.parse(
-            model="gpt-4o-mini",
-            messages=[
-                {"role": "system", "content": self.SYSTEM_INSTRUCTION},
-                {"role": "user", "content": f"Title: {slide_title}\nAudience: {audience}\nGoals: {goals}"}
-            ],
-            response_format=SlideResponse,
-        )
-        return completion.choices[0].message.parsed.model_dump()
+        return df[mask_number & mask_title].copy()
+
+    def _fetch_ai_response(self, slide_title: str, audience: str, goals: List[str]) -> Dict[str, Any]:
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                completion = self.client.beta.chat.completions.parse(
+                    model=GPT_MODEL,
+                    messages=[
+                        {"role": "system", "content": self.SYSTEM_INSTRUCTION},
+                        {"role": "user", "content": f"Title: {slide_title}\nAudience: {audience}\nGoals: {', '.join(goals)}"}
+                    ],
+                    response_format=SlideResponse,
+                )
+                parsed_data = completion.choices[0].message.parsed
+                return parsed_data.model_dump() if parsed_data else {}
+            
+            except (RateLimitError, APITimeoutError) as e:
+                if attempt < max_retries - 1:
+                    wait_time = 2 ** attempt
+                    time.sleep(wait_time)
+                    continue
+                else:
+                    raise RuntimeError(f"API Rate Limit exceeded after retries: {e}")
+            except Exception as e:
+                raise RuntimeError(f"API Error: {e}")
